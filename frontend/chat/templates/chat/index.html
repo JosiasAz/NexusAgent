@@ -1,0 +1,103 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="icon" href="data:,">
+  <title>Equipe de Software</title>
+  <link rel="stylesheet" href="{% static 'chat/styles.css' %}">
+</head>
+<body>
+  <aside id="lateral" class="lateral" aria-label="Projetos">
+    <div class="lateral-topo">
+      <h1>Equipe de Software</h1>
+      <button id="novo-projeto" class="botao-primario" type="button">+ Novo projeto</button>
+    </div>
+    <nav>
+      <h2 class="rotulo">Histórico</h2>
+      <ul id="lista-projetos" class="lista-projetos"></ul>
+      <p id="lista-vazia" class="sutil vazio-lista">Nenhum projeto ainda.</p>
+    </nav>
+    <p id="modelo" class="sutil rodape-lateral">conectando…</p>
+  </aside>
+  <div id="fundo-menu" class="fundo-menu" hidden></div>
+
+  <div class="principal">
+    <!-- Criar projeto -->
+    <section id="tela-novo" class="tela-novo" hidden>
+      <button class="botao-menu" type="button" aria-label="Abrir projetos">☰ Projetos</button>
+      <form id="form-projeto" class="cartao-form">
+        <h2>Novo projeto</h2>
+        <p class="sutil">Descreva o projeto e a IA monta uma equipe de agentes sob medida, com ideias para começar.</p>
+        <label for="titulo">Assunto</label>
+        <input id="titulo" maxlength="80" placeholder="Ex.: Controle de estoque" required>
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" rows="5" maxlength="1500" placeholder="O que o sistema deve fazer, para quem, e cuidados importantes (testes, segurança, desempenho…)" required></textarea>
+        <button id="criar" class="botao-primario" type="submit">Montar equipe com IA</button>
+        <p id="status-criacao" class="sutil" role="status"></p>
+      </form>
+    </section>
+
+    <!-- Projeto aberto -->
+    <section id="tela-projeto" class="tela-projeto" hidden>
+      <header class="topo">
+        <button class="botao-menu" type="button" aria-label="Abrir projetos">☰</button>
+        <div class="topo-info">
+          <h2 id="projeto-titulo"></h2>
+          <p id="projeto-descricao" class="sutil"></p>
+        </div>
+        <div class="acoes">
+          <span class="selo" title="Versão atual do projeto">v<span id="versao">0.1.0</span></span>
+          <span class="selo" id="qtd-agentes" title="Agentes da equipe"></span>
+          <button id="alternar-fluxo" class="botao-secundario" type="button" aria-pressed="true" aria-controls="painel-fluxo">Fluxo</button>
+          <button id="excluir" class="botao-secundario" type="button" title="Excluir projeto">Excluir</button>
+        </div>
+      </header>
+      <div class="corpo-projeto">
+        <div class="coluna-chat">
+          <details id="painel-codigo" class="painel-codigo" hidden>
+            <summary>Código atual do projeto</summary>
+            <div id="codigo-atual"></div>
+          </details>
+
+          <main id="mensagens" class="mensagens" aria-live="polite"></main>
+
+          <form id="formulario" class="compositor">
+            <label for="entrada" class="oculto">Mensagem</label>
+            <textarea id="entrada" rows="1" maxlength="2000" placeholder="Peça algo à equipe… (Enter envia, Shift+Enter quebra linha)" required></textarea>
+            <button id="enviar" class="botao-primario" type="submit">Enviar</button>
+          </form>
+        </div>
+
+        <!-- Fluxo ao vivo (estilo n8n): grafo de nós + inspetor do nó selecionado -->
+        <aside id="painel-fluxo" class="painel-fluxo" aria-label="Fluxo da execução">
+          <header class="fluxo-topo">
+            <div>
+              <h3>Fluxo da execução</h3>
+              <p id="fluxo-pedido" class="sutil">Envie um pedido ou clique em "Ver fluxo" no histórico.</p>
+            </div>
+            <label class="seguir"><input id="seguir" type="checkbox" checked> Seguir ao vivo</label>
+            <button id="fechar-fluxo" class="botao-secundario fechar-fluxo" type="button" aria-label="Fechar fluxo">✕</button>
+          </header>
+          <div id="grafo" class="grafo"></div>
+          <section id="inspetor" class="inspetor" aria-live="polite">
+            <p class="sutil">Clique em um nó para ver a entrada, a saída, as ferramentas e o código.</p>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <template id="tpl-cartao">
+    <article class="cartao">
+      <header><span class="agente"></span><span class="papel"></span></header>
+      <div class="conteudo"></div>
+    </article>
+  </template>
+
+  <script src="{% static 'chat/fluxo.js' %}"></script>
+  <script src="{% static 'chat/app.js' %}"></script>
+</body>
+</html>
