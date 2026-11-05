@@ -1,5 +1,7 @@
 """Configuração central: variáveis de ambiente, limites e escolha do modelo."""
+import json
 import os
+import urllib.request
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,7 +24,27 @@ DB_PATH = Path(os.environ.get('DB_PATH', Path(__file__).resolve().parent.parent 
 
 GEMINI_MODELO = os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash-lite')
 OLLAMA_CLOUD_MODELO = os.environ.get('OLLAMA_CLOUD_MODEL', 'gemma4:31b')
-OLLAMA_LOCAL_MODELO = os.environ.get('OLLAMA_MODEL', 'qwen2.5:7b')
+OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')
+
+
+def listar_modelos_locais(base=OLLAMA_BASE_URL):
+    """Lista nomes dos modelos instalados no Ollama local."""
+    with urllib.request.urlopen(f'{base.rstrip("/")}/api/tags', timeout=5) as r:
+        dados = json.loads(r.read().decode())
+    return [m['name'] for m in dados.get('models', [])]
+
+
+def escolher_modelo_local(preferido=None):
+    """Usa OLLAMA_MODEL / preferido se existir no Ollama; senão o primeiro instalado."""
+    disponiveis = listar_modelos_locais()
+    if not disponiveis:
+        raise RuntimeError('Nenhum modelo no Ollama. Rode: ollama pull qwen2.5:7b')
+    escolhido = preferido or os.environ.get('OLLAMA_MODEL')
+    if escolhido:
+        for nome in disponiveis:
+            if nome == escolhido or nome.startswith(escolhido + ':') or nome.split(':')[0] == escolhido:
+                return nome
+    return disponiveis[0]
 
 
 def descrever_modelo():
@@ -31,7 +53,10 @@ def descrever_modelo():
         return f'Gemini · {GEMINI_MODELO}'
     if os.environ.get('OLLAMA_API_KEY'):
         return f'Ollama Cloud · {OLLAMA_CLOUD_MODELO}'
-    return f'Ollama local · {OLLAMA_LOCAL_MODELO}'
+    try:
+        return f'Ollama local · {escolher_modelo_local()}'
+    except Exception:
+        return 'Ollama local · (nenhum modelo detectado)'
 
 
 def criar_modelo(max_tokens=MAX_TOKENS):
@@ -47,5 +72,6 @@ def criar_modelo(max_tokens=MAX_TOKENS):
                           validate_model_on_init=False,
                           client_kwargs={'headers': {'Authorization': 'Bearer ' + chave},
                                          'timeout': TIMEOUT_SEGUNDOS})
-    return ChatOllama(model=OLLAMA_LOCAL_MODELO, num_predict=max_tokens,
+    nome = escolher_modelo_local()
+    return ChatOllama(model=nome, num_predict=max_tokens,
                       client_kwargs={'timeout': TIMEOUT_SEGUNDOS})
